@@ -1,0 +1,24 @@
+# Compiled binaries
+snake
+a.out
+*.exe
+*.out
+
+# Object files and libraries
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+
+# Debug symbols
+*.dSYM/
+*.pdb
+
+# Build directories
+build/
+bin/
+obj/
+
+# macOS
+.DS_Store
