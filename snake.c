@@ -11,6 +11,18 @@
 #define SNAKE_SPEED 100000 // Speed of the snake in microseconds
 #define LINES 24 // Number of lines in the terminal window
 #define COLS 80 // Number of columns in the terminal window
+#define BOARD_CHAR '#' // Character used for the border
+#define SNAKE_HEAD_CHAR 'O' // Character used for the snake's head
+#define SNAKE_BODY_CHAR 'o' // Character used for the snake's body
+#define FOOD_CHAR '*' // Character used for the food
+#define SCORE_POSITION_Y 0 // Y position for the score display
+#define SCORE_POSITION_X 0 // X position for the score display
+#define SCORE_TEXT "Score: " // Text for the score display
+#define SCORE_TEXT_LENGTH 7 // Length of the score text
+#define SCORE_DIGITS 5 // Maximum number of digits for the score display
+#define BOARD_WIDTH (COLS - 2) // Width of the game board
+#define BOARD_HEIGHT (LINES - 2) // Height of the game board
+
 
 
 // Initialize curses or any other necessary libraries for drawing the snake on the screen would go here. For simplicity, we will not include actual drawing code in this snippet.
