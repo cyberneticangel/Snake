@@ -25,3 +25,7 @@ bool is_snake_moving(); // returns true if the snake is currently moving
 bool is_snake_growing(); // returns true if the snake is currently growing
 bool head_on_food(); // returns true if the snake's head is on the food
 int window_handler(); // handles window resizing and returns 0 on success, -1 on failure
+void draw_game(); // draws the entire game state, including the snake, food, and any other elements
+void draw_border(); // draws the border around the game area
+void draw_food(); // draws the food on the screen
+void draw_score(); // draws the current score on the screen

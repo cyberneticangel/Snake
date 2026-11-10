@@ -9,6 +9,8 @@
 #define MIN_WINDOW_SIZE 100 // Minimum window size for the game to run
 #define MAX_SNAKE_LENGTH 100 // Maximum length of the snake
 #define SNAKE_SPEED 100000 // Speed of the snake in microseconds
+#define LINES 24 // Number of lines in the terminal window
+#define COLS 80 // Number of columns in the terminal window
 
 
 // Initialize curses or any other necessary libraries for drawing the snake on the screen would go here. For simplicity, we will not include actual drawing code in this snippet.
@@ -118,7 +120,17 @@ bool check_collision() {
 
 // Function to draw the snake on the screen
 void draw_snake() {
-    // TODO: erase the screen, draw each segment, then refresh
+    // TODO: draw each segment (head and body can use different characters)
+}
+
+// Function to draw one full frame of the game
+void draw_game() {
+    erase(); // clear the screen buffer (less flicker than clear())
+    draw_border(); // draw the border
+    draw_snake(); // draw the snake
+    draw_food(); // draw the food
+    draw_score(); // draw the score
+    refresh(); // push the finished frame to the terminal
 }
 
 // Function to clean up resources used by the game
@@ -129,6 +141,7 @@ void cleanup_game() {
 int main(void) {
     initialize_curses(); // Initialize curses for drawing
     initialize_game(); // Initialize the game state
+    draw_game(); // Draw the initial game state
 
     while (snake.alive) {
         char* input = handle_input(); // Handle user input
@@ -143,7 +156,7 @@ int main(void) {
         }
 
         update_snake(); // Update the snake's position
-        draw_snake(); // Draw the snake on the screen
+        draw_game(); // Draw the whole frame
 
         usleep(SNAKE_SPEED); // Control the speed of the game loop
     }
