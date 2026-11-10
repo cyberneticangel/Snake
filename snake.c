@@ -108,7 +108,23 @@ int update_snake() {
         }
     }
     return 0; // success
-}   
+}
+
+// Function to check if the snake hit a wall or itself
+bool check_collision() {
+    // TODO: check the head against the walls and the body segments
+    return false; // stub: never collides yet
+}
+
+// Function to draw the snake on the screen
+void draw_snake() {
+    // TODO: erase the screen, draw each segment, then refresh
+}
+
+// Function to clean up resources used by the game
+void cleanup_game() {
+    // TODO: nothing to free yet
+}
 
 int main(void) {
     initialize_curses(); // Initialize curses for drawing
