@@ -24,3 +24,4 @@ bool is_snake_alive(); // returns true if the snake is alive, false if it has co
 bool is_snake_moving(); // returns true if the snake is currently moving
 bool is_snake_growing(); // returns true if the snake is currently growing
 bool head_on_food(); // returns true if the snake's head is on the food
+int window_handler(); // handles window resizing and returns 0 on success, -1 on failure
