@@ -192,7 +192,12 @@ bool check_collision() {
     if (snake.x[0] <= 0 || snake.x[0] >= COLS - 1 || snake.y[0] <= 0 || snake.y[0] >= LINES - 1) {
         return true;
     }
-    // TODO: check the head against the body segments
+    // The body has already moved, so the head only collides if it landed on another segment
+    for (int i = 1; i < snake.length; i++) {
+        if (snake.x[i] == snake.x[0] && snake.y[i] == snake.y[0]) {
+            return true;
+        }
+    }
     return false;
 }
 
@@ -273,14 +278,21 @@ int main(void) {
 
         while (snake.alive) {
             char* input = handle_input(); // Handle user input
+            int new_direction = -1; // -1 means no direction key was pressed
             if (strcmp(input, "up") == 0) {
-                snake.direction = 0;
+                new_direction = 0;
             } else if (strcmp(input, "right") == 0) {
-                snake.direction = 1;
+                new_direction = 1;
             } else if (strcmp(input, "down") == 0) {
-                snake.direction = 2;
+                new_direction = 2;
             } else if (strcmp(input, "left") == 0) {
-                snake.direction = 3;
+                new_direction = 3;
+            }
+            // Directions go clockwise (up, right, down, left), so the opposite is two steps away.
+            // Ignore a reversal once the snake has a body, or the head would turn into it.
+            bool reversing = new_direction == (snake.direction + 2) % 4;
+            if (new_direction != -1 && !(reversing && snake.length > 1)) {
+                snake.direction = new_direction;
             }
 
             update_snake(); // Update the snake's position
