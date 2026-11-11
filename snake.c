@@ -1,9 +1,12 @@
 // snake.c
 
-#include "snake.h"
-#include <stdio.h>
-#include <ncurses.h>
+#include "snake.h" // for the snake game header file
+#include <stdio.h> // for printf function
+#include <curses.h> // for drawing the snake on the screen, curses or ncurses? 
 #include <unistd.h> // for usleep function
+#include <stdbool.h> // for boolean type
+#include <stdlib.h> // for rand and srand functions
+#include <time.h> // for seeding the random number generator
 
 // Preprocessor directives for the snake game
 #define MIN_WINDOW_SIZE 100 // Minimum window size for the game to run
@@ -22,6 +25,8 @@
 #define SCORE_DIGITS 5 // Maximum number of digits for the score display
 #define BOARD_WIDTH (COLS - 2) // Width of the game board
 #define BOARD_HEIGHT (LINES - 2) // Height of the game board
+#define SNAKE_COLOR_PAIR 1 // Color pair number for the snake (green)
+#define FOOD_COLOR_PAIR 2 // Color pair number for the food (yellow)
 
 
 
@@ -33,6 +38,24 @@ void initialize_curses() {
     keypad(stdscr, TRUE); // enable special keys (like arrow keys)
     nodelay(stdscr, TRUE); // make getch() non-blocking
     curs_set(0); // hide the cursor
+    if (has_colors()) {
+        start_color(); // enable color support
+        use_default_colors(); // let -1 mean the terminal's own background
+        init_pair(SNAKE_COLOR_PAIR, COLOR_GREEN, -1);
+        init_pair(FOOD_COLOR_PAIR, COLOR_YELLOW, -1);
+    }
+}
+
+void initialize_board() {
+    // Draw the border of the game board
+    for (int x = 0; x < COLS; x++) {
+        mvaddch(0, x, BOARD_CHAR); // top border
+        mvaddch(LINES - 1, x, BOARD_CHAR); // bottom border
+    }
+    for (int y = 0; y < LINES; y++) {
+        mvaddch(y, 0, BOARD_CHAR); // left border
+        mvaddch(y, COLS - 1, BOARD_CHAR); // right border
+    }
 }
 
 int window_handler() {
@@ -59,6 +82,26 @@ typedef struct {
 // Global snake instance
 static Snake snake;
 
+// Global food position
+static int food_x;
+static int food_y;
+
+// Function to place the food at a random spot inside the border, off the snake
+void place_food() {
+    bool on_snake;
+    do {
+        food_x = 1 + rand() % BOARD_WIDTH; // columns 1 to COLS - 2
+        food_y = 1 + rand() % BOARD_HEIGHT; // lines 1 to LINES - 2
+        on_snake = false;
+        for (int i = 0; i < snake.length; i++) {
+            if (snake.x[i] == food_x && snake.y[i] == food_y) {
+                on_snake = true;
+                break;
+            }
+        }
+    } while (on_snake);
+}
+
 // Function to initialize the snake's state
 int initialize_game() {
     snake.length = 1; // start with a length of 1
@@ -68,6 +111,7 @@ int initialize_game() {
     snake.alive = true; // snake is alive at the start
     snake.moving = true; // snake is moving at the start
     snake.growing = false; // snake is not growing at the start
+    place_food(); // put the first food on the board
     return 0; // success
 }
 
@@ -95,6 +139,10 @@ int update_snake() {
         return -1; // cannot update if the snake is dead
     }
     else {
+        // Remember where the tail is, so a new segment can go there if the snake eats
+        int tail_x = snake.x[snake.length - 1];
+        int tail_y = snake.y[snake.length - 1];
+
         // Move the snake's body segments
         for (int i = snake.length - 1; i > 0; i--) {
             snake.x[i] = snake.x[i - 1];
@@ -120,19 +168,59 @@ int update_snake() {
             snake.alive = false; // mark the snake as dead
             return -1; // collision occurred
         }
+        // Grow by one segment at the old tail position and move the food
+        if (head_on_food()) {
+            if (snake.length < MAX_SNAKE_LENGTH) {
+                snake.x[snake.length] = tail_x;
+                snake.y[snake.length] = tail_y;
+                snake.length++;
+            }
+            place_food();
+        }
     }
     return 0; // success
 }
 
+// Function to check if the snake's head is on the food
+bool head_on_food() {
+    return snake.x[0] == food_x && snake.y[0] == food_y;
+}
+
 // Function to check if the snake hit a wall or itself
 bool check_collision() {
-    // TODO: check the head against the walls and the body segments
-    return false; // stub: never collides yet
+    // The border sits on the outermost lines and columns, so touching it ends the game
+    if (snake.x[0] <= 0 || snake.x[0] >= COLS - 1 || snake.y[0] <= 0 || snake.y[0] >= LINES - 1) {
+        return true;
+    }
+    // TODO: check the head against the body segments
+    return false;
 }
 
 // Function to draw the snake on the screen
 void draw_snake() {
-    // TODO: draw each segment (head and body can use different characters)
+    attron(COLOR_PAIR(SNAKE_COLOR_PAIR));
+    for (int i = 0; i < snake.length; i++) {
+        char segment = (i == 0) ? SNAKE_HEAD_CHAR : SNAKE_BODY_CHAR; // head gets its own character
+        mvaddch(snake.y[i], snake.x[i], segment);
+    }
+    attroff(COLOR_PAIR(SNAKE_COLOR_PAIR));
+}
+
+// Function to draw the border around the game area
+void draw_border() {
+    initialize_board(); // erase() wipes the border each frame, so redraw it
+}
+
+// Function to draw the food on the screen
+void draw_food() {
+    attron(COLOR_PAIR(FOOD_COLOR_PAIR));
+    mvaddch(food_y, food_x, FOOD_CHAR);
+    attroff(COLOR_PAIR(FOOD_COLOR_PAIR));
+}
+
+// Function to draw the current score on the screen
+void draw_score() {
+    // TODO: print SCORE_TEXT and the score at SCORE_POSITION_Y, SCORE_POSITION_X
 }
 
 // Function to draw one full frame of the game
@@ -145,6 +233,26 @@ void draw_game() {
     refresh(); // push the finished frame to the terminal
 }
 
+// Function to show the game over message and ask whether to play again
+// Returns true to play again, false to quit
+bool draw_game_over() {
+    const char* message = "GAME OVER";
+    const char* prompt = "Press R to play again or Q to quit";
+    mvprintw(LINES / 2 - 1, (COLS - (int)strlen(message)) / 2, "%s", message);
+    mvprintw(LINES / 2 + 1, (COLS - (int)strlen(prompt)) / 2, "%s", prompt);
+    refresh();
+    flushinp(); // discard keys pressed during play so they don't skip this screen
+    nodelay(stdscr, FALSE); // make getch() wait for a key
+
+    int key;
+    do {
+        key = getch();
+    } while (key != 'r' && key != 'R' && key != 'q' && key != 'Q'); // ignore any other key
+
+    nodelay(stdscr, TRUE); // make getch() non-blocking again for the next game
+    return key == 'r' || key == 'R';
+}
+
 // Function to clean up resources used by the game
 void cleanup_game() {
     // TODO: nothing to free yet
@@ -152,26 +260,35 @@ void cleanup_game() {
 
 int main(void) {
     initialize_curses(); // Initialize curses for drawing
-    initialize_game(); // Initialize the game state
-    draw_game(); // Draw the initial game state
-
-    while (snake.alive) {
-        char* input = handle_input(); // Handle user input
-        if (strcmp(input, "up") == 0) {
-            snake.direction = 0;
-        } else if (strcmp(input, "right") == 0) {
-            snake.direction = 1;
-        } else if (strcmp(input, "down") == 0) {
-            snake.direction = 2;
-        } else if (strcmp(input, "left") == 0) {
-            snake.direction = 3;
-        }
-
-        update_snake(); // Update the snake's position
-        draw_game(); // Draw the whole frame
-
-        usleep(SNAKE_SPEED); // Control the speed of the game loop
+    initialize_board(); // Initialize the game board
+    if (window_handler() != 0) {
+        endwin(); // End curses mode if window size is insufficient
+        return -1; // Exit the program with an error code
     }
+    srand(time(NULL)); // seed the random number generator for food placement
+
+    do {
+        initialize_game(); // Initialize (or reset) the game state
+        draw_game(); // Draw the initial game state
+
+        while (snake.alive) {
+            char* input = handle_input(); // Handle user input
+            if (strcmp(input, "up") == 0) {
+                snake.direction = 0;
+            } else if (strcmp(input, "right") == 0) {
+                snake.direction = 1;
+            } else if (strcmp(input, "down") == 0) {
+                snake.direction = 2;
+            } else if (strcmp(input, "left") == 0) {
+                snake.direction = 3;
+            }
+
+            update_snake(); // Update the snake's position
+            draw_game(); // Draw the whole frame
+
+            usleep(SNAKE_SPEED); // Control the speed of the game loop
+        }
+    } while (draw_game_over()); // Start a new game if the player chooses to play again
 
     cleanup_game(); // Clean up resources used by the game
     endwin(); // End curses mode

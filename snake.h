@@ -5,6 +5,8 @@
 
 // Forward declarations for snake game
 
+void initialize_curses(); // initializes curses mode and terminal settings
+void initialize_board(); // draws the border of the game board
 char* handle_input(); // returns a string representing the input direction
 int update_snake(); // updates the snake's position and returns 0 on success, -1 on collision
 void draw_snake(); // draws the snake on the screen
@@ -24,8 +26,10 @@ bool is_snake_alive(); // returns true if the snake is alive, false if it has co
 bool is_snake_moving(); // returns true if the snake is currently moving
 bool is_snake_growing(); // returns true if the snake is currently growing
 bool head_on_food(); // returns true if the snake's head is on the food
+void place_food(); // places the food at a random empty spot inside the border
 int window_handler(); // handles window resizing and returns 0 on success, -1 on failure
 void draw_game(); // draws the entire game state, including the snake, food, and any other elements
 void draw_border(); // draws the border around the game area
 void draw_food(); // draws the food on the screen
 void draw_score(); // draws the current score on the screen
+bool draw_game_over(); // shows the game over message; returns true to play again, false to quit
